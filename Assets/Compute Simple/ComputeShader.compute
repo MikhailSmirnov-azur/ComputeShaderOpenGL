@@ -1,0 +1,55 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ComputeSimple
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+struct Pos
+{
+    float3 position;
+};
+
+
+
+#include "UnityCG.cginc"
+
+RWStructuredBuffer<Pos> pos;
+
+
+float count;
+float3 pointss;
+
+float sqr(float a)
+{ 
+    return a*a;
+}
+
+float CalculateY(float Y, int index, uint3 id)
+
+{
+    if (Y>id.y % count)
+    Y = Y - id.y % count;
+
+    float distXZ = distance(float2(pos[index].position.x, pos[index].position.z),pointss.xz);
+    //float distY = pos[index].position.y - pointss.y;
+    //float gravity = min(0.0001*distXZ,1);
+    float gravity = smoothstep(0.005, 1 , 0.001*distXZ);
+   // float intake = min(1/(distXZ),10)/10;
+    float intake = smoothstep(0.01, 1 , 1/distXZ);
+
+    Y = Y + intake - (gravity*Y);
+  
+    return Y;
+}
+
+[numthreads(8,8,8)]
+void ComputeSimple(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.z*count*count + id.y*count + id.x; // Рассчитываем линейный индекс
+    if (index < pos.Length)
+    {
+       pos[index].position = float3(id.x % count, id.y % count + CalculateY(pos[index].position.y, index, id),id.z % count);
+    }
+}
+//pos[index].position.y+distance(float2(pos[index].position.x,pos[index].position.z),pointss.xz)/1000
+//

@@ -1,0 +1,16 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ComputeSimple
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<float3> Positions;
+#include "UnityCG.cginc"
+
+[numthreads(8,1,1)]
+void ComputeSimple (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    
+    Positions[id.x].y = sin(_Time.x*50+Positions[id.x].x+Positions[id.x].z);
+  
+}

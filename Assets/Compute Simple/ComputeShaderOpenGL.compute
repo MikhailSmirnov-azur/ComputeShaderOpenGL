@@ -1,0 +1,41 @@
+﻿#pragma kernel CSMain
+#include "UnityCG.cginc"
+
+RWTexture2D<float4> PositionTex;
+
+float count;
+float3 pointss;
+
+float sqr(float a)
+{
+    return a * a;
+}
+
+float CalculateY(float Y, int index, uint3 id, float3 oldPos)
+{
+    if (Y > id.y % count)
+        Y = Y - id.y % count;
+
+    float distXZ = distance(float2(oldPos.x, oldPos.z), pointss.xz);
+    float gravity = smoothstep(0.005, 1, 0.001 * distXZ);
+    float intake = smoothstep(0.01, 1, 1 / distXZ);
+    Y = Y + intake - (gravity * Y);
+    return Y;
+}
+
+[numthreads(8, 8, 8)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.z * count * count + id.y * count + id.x;
+
+    // Преобразуем линейный индекс в координаты текстуры
+    uint texWidth = count * count;
+    uint2 texCoord = uint2(index % texWidth, index / texWidth);
+
+    float3 oldPos = PositionTex[texCoord].xyz;
+    float y = oldPos.y;
+
+    float newY = CalculateY(y, index, id, oldPos);
+
+    PositionTex[texCoord] = float4(id.x % count, id.y % count + newY, id.z % count, 0);
+}
